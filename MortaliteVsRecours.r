@@ -51,13 +51,10 @@ wtd.cor(EvoMortStd, EvoTxPat, weight = PondPop60) |>
 png("EvoMortStdVsEvoTxPat.png")
 
 # Dessiner le nuage de points
-plot(EvoTxPat, EvoMortStd, cex = PondPop60/10000000, main = "Mortalité standardisée vs recours aux soins", xlab = "Taux de patients", ylab = "Mortalité standardisée")
+plot(EvoTxPat, EvoMortStd, cex = PondPop60/10000000, main = "Δ Mortalité standardisée vs Δ recours aux soins", xlab = "Δ recours aux soins", ylab = "Δ mortalité standardisée")
 
-# Ajuster la régression linéaire
-fit <- lm(EvoMortStd ~ EvoTxPat, weights = PondPop60)
-
-# Ajouter la ligne de tendance
-abline(fit, col = "red")
+# Ajuster la régression linéaire et ajouter la ligne de tendance:
+lm(EvoMortStd ~ EvoTxPat, weights = PondPop60) |> abline(col = "red")
 
 # Fermer le fichier PNG
 dev.off()
