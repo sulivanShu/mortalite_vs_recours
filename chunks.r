@@ -9,15 +9,21 @@ stop("
 	")
 
 # mkfifo $XDG_DATA_HOME/fifo 2>/dev/null ; chmod 600 $XDG_DATA_HOME/fifo && tail -f $XDG_DATA_HOME/fifo | R --no-echo --save --restore --file=- & echo 'options(error=dump.frames)' | cat > $XDG_DATA_HOME/fifo ; fg 2>/dev/null
-# Insee: manque les départements  
 
-# options(error=dump.frames)
-# 
-# system.time ({
+
+	`[`(x = _, "REF_AREA") |> 
+unique() |>
+unlist() |>
+	as.character() |>
+	print()
+
+
 
 library(insee) 
+library(weights)
+
 # Évolution du taux de mortalité standardisé de 2020 par rapport à la moyenne des trois années précédantes.
-get_idbank_list("DECES-MORTALITE") |> 
+EvoMortStd = get_idbank_list("DECES-MORTALITE") |> 
 	subset(FREQ == "A" & INDICATEUR == "TAUX_MORTALITE_STANDARDISE" & grepl("^D", REF_AREA) & AGE == "65-") |> 
 	# data.frame des idbank
 	`[`(x = _, "idbank") |> 
@@ -31,12 +37,11 @@ get_idbank_list("DECES-MORTALITE") |>
 	unlist() |> 
 	# fonction pour calculer le taux de croissance de la dernière année par rapport à la moyenne des trois années précédentes
 	(function(data = _) { sapply(seq(1, length(data), by = 4), function(start) { ( data[start] - mean(data[(start+1):(start+3)]) ) / mean(data[(start+1):(start+3)]) }) })() |>
+	as.numeric() |>
 	print()
 
-# })
-
 # Nombre de personnes de plus de 60 ans par département fois 100
-get_idbank_list("TCRED-ESTIMATIONS-POPULATION") |> 
+PondPop60 = get_idbank_list("TCRED-ESTIMATIONS-POPULATION") |> 
 	subset(grepl("^D", REF_AREA) & SEXE == "0" & grepl("00-$|60-$", AGE) ) |> 
 	`[`(x = _, "idbank") |> 
 	unlist() |> 
@@ -45,19 +50,39 @@ get_idbank_list("TCRED-ESTIMATIONS-POPULATION") |>
 	`[`(x = _, "OBS_VALUE") |> 
 	unlist() |> 
 	(\(data) { sapply(seq(1, length(data), by = 2), \(start) { (data[start]) * data[start+1] }) })() |>
+	as.numeric() |>
 	print()
 
-scan("AtihTauxPatients1000Std.tsv", what = numeric(), quiet = TRUE) |>
+# évolution du taux de patients
+EvoTxPat = scan("AtihTauxPatients1000Std.tsv", what = numeric(), quiet = TRUE) |>
 	(\(data) { sapply(seq(1, length(data), by = 4), function(start) { ( data[start] - mean(data[(start+1):(start+3)]) ) / mean(data[(start+1):(start+3)]) }) })() |>
 	print()
 
-help("scan")
+#  Corrélation entre l'évolution de la mortalité standardisée et l'évolution du taux de recours aux soins hospitaliers, par département, 2020 par rapport à la moyenne 2017-2019, pondérée la population des plus de 60 ans des départements 
+wtd.cor(EvoMortStd, EvoTxPat, weight = PondPop60)
 
-	print()
+cor(EvoMortStd, EvoTxPat)
 
-"blabla"
 
-print()
+
+help("wtd.cor")
+
+?wtd.cor
+
+# weights dépend de gcc-fortran pour la compilation sur ARM
+install.packages("weights", dependencies = TRUE)
+library(weights)
+
+chooseCRANmirror()
+
+file.path(R.home("etc"), "Rprofile.site")
+
+
+R.home()
+
+getCRANmirrors() |>
+	subset(City == "Paris")
+
 
 	(\(data) { sapply(seq(1, length(data), by = 4), function(start) { ( data[start] - mean(data[(start+1):(start+3)]) ) / mean(data[(start+1):(start+3)]) }) })()
 
@@ -75,31 +100,5 @@ install.packages('sqldf')
 
 available.packages()
 
-
-
-library()
-
-
-help("read_html" package="rvest")
-
-	class()
-
-colnames()
-
-unique() |> print(n=200)
-
-library(insee) 
-# liste des départements. 
-get_idbank_list("DECES-MORTALITE") |> 
-	subset(FREQ == "A" & INDICATEUR == "TAUX_MORTALITE_STANDARDISE" & grepl("^D", REF_AREA) & AGE == "65-") |> 
-	# data.frame des idbank
-	`[`(x = _, "idbank") |> 
-	# convertir le data.frame en numeric
-	unlist() |> 
-	# sélectionner la période pertinente des tableaux
-	get_insee_idbank(startPeriod = 2020, endPeriod = 2020) |> 
-	(\(data) data$REF_AREA)()
-
-
-	colnames()
-
+# à ajouter au fichier: /usr/lib/R/etc/Rprofile.site
+options(repos = c(CRAN = "https://cran.irsn.fr/"))
