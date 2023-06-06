@@ -42,11 +42,6 @@ EvoTxPat = scan("AtihTauxPatients1000Std.tsv", what = numeric(), quiet = TRUE) |
 # Corrélation entre l'évolution de la mortalité standardisée et l'évolution du taux de recours aux soins hospitaliers, par département, 2020 par rapport à la moyenne 2017-2019, pondérée la population des plus de 60 ans dans chaque département
 wtd.cor(EvoMortStd, EvoTxPat, weight = PondPop60)
 
-# graphique
-plot(EvoMortStd, EvoTxPat)
-
-?plot
-
 # Créer le fichier PNG
 png("EvoMortStdVsEvoTxPat.png")
 
@@ -61,18 +56,3 @@ abline(fit, col = "red")
 
 # Fermer le fichier PNG
 dev.off()
-
-# # Créer le fichier PNG
-# png("graphique_1.png")
-# 
-# # Dessiner le nuage de points
-# plot(EvoMortStd, EvoTxPat, cex = PondPop60/10000000, main = "Mortalité standardisée vs recours aux soins", xlab = "EvoMortStd", ylab = "EvoTxPat")
-# 
-# # Ajuster la régression linéaire
-# fit <- lm(EvoTxPat ~ EvoMortStd, weights = PondPop60/10000000)
-# 
-# # Ajouter la ligne de tendance
-# abline(fit, col = "red")
-# 
-# # Fermer le fichier PNG
-# dev.off()
