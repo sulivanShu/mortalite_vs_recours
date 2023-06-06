@@ -35,12 +35,17 @@ PondPop60 = get_idbank_list("TCRED-ESTIMATIONS-POPULATION") |>
 	print()
 
 # évolution du taux de patients
+# source: https://www.scansante.fr/applications/taux-de-recours-tous-champs/submit?snatnav=&mbout=part1&champ=tous+champs&unite=patients&version=v2021&taux=stand&tgeo=dep
+# période: 2017 à 2020
+# type de taux: taux standardisés
+# niveau géographique: département
 EvoTxPat = scan("AtihTauxPatients1000Std.tsv", what = numeric(), quiet = TRUE) |>
 	(\(data) { sapply(seq(1, length(data), by = 4), function(start) { ( data[start] - mean(data[(start+1):(start+3)]) ) / mean(data[(start+1):(start+3)]) }) })() |>
 	print()
 
 # Corrélation entre l'évolution de la mortalité standardisée et l'évolution du taux de recours aux soins hospitaliers, par département, 2020 par rapport à la moyenne 2017-2019, pondérée la population des plus de 60 ans dans chaque département
-wtd.cor(EvoMortStd, EvoTxPat, weight = PondPop60)
+wtd.cor(EvoMortStd, EvoTxPat, weight = PondPop60) |>
+	print()
 
 # Créer le fichier PNG
 png("EvoMortStdVsEvoTxPat.png")
