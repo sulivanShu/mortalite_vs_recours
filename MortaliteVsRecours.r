@@ -4,7 +4,9 @@ library(insee)
 library(weights)
 
 # Évolution du taux de mortalité standardisé de 2020 par rapport à la moyenne des trois années précédantes.
-EvoMortStd = get_idbank_list("DECES-MORTALITE") |> 
+EvoMortStd = 
+
+	get_idbank_list("DECES-MORTALITE") |> 
 	subset(FREQ == "A" & INDICATEUR == "TAUX_MORTALITE_STANDARDISE" & grepl("^D", REF_AREA) & AGE == "65-") |> 
 	# data.frame des idbank
 	`[`(x = _, "idbank") |> 

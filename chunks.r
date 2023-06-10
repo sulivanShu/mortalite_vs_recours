@@ -102,3 +102,60 @@ available.packages()
 
 # à ajouter au fichier: /usr/lib/R/etc/Rprofile.site
 options(repos = c(CRAN = "https://cran.irsn.fr/"))
+
+install.packages("onsr")
+
+remotes::install_github("HFAnalyticsLab/monstR", build_vignettes = FALSE )
+
+library(onsr)
+
+ons_available_datasets()
+
+ons_ids() |>
+	print()
+
+weekly = ons_get(id = "weekly-deaths-local-authority")
+
+weekly |>
+	colnames()
+
+weekly |>
+	print(n = 1)
+
+weekly |>
+	subset(Time == "2022") |> 
+	print()
+
+
+
+	class()
+
+
+	print(n = 500)
+
+rm('"weekly-deaths-local-authority"')
+
+
+|>
+	subset('"Time"' == "2020") |>
+	print()
+
+	colnames()
+
+	print("hello!")
+
+ons_get(id = "weekly-deaths-age-sex") |>
+	`[`(x = _, "Geography") |> 
+	unique() |>
+	print(n=100)
+
+
+ons_get(id = "weekly-deaths-age-sex") |>
+	`[`(x = _, "age-groups") |> 
+	unique() |>
+	print(n=100)
+
+
+	grepl(pattern = "death", x = _)
+
+	sapply(grep, pattern = ".*deaths.*")
