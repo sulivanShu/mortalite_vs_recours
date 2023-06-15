@@ -11,4 +11,3 @@ https://digital.nhs.uk/data-and-information/publications/statistical/hospital-ad
 
 join -t \t -j 1 (tail -n +2 ODS_2023-06-10T011517.csv | tr -d \" | tr , \t | sort -k1,1 | psub) (head -n 513 hosp-epis-stat-admi-hosp-prov-2020-21-tab.csv | tail -n +23 | cut -d \t -f 2- | sed "s,\t\t\t\t\t,," | sort -k1,1 | psub) | wc -l
 
-
