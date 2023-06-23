@@ -9,7 +9,7 @@ EvoMortStd = get_idbank_list("DECES-MORTALITE") |>
 	subset(FREQ == "A" & INDICATEUR == "TAUX_MORTALITE_STANDARDISE" & grepl("^D", REF_AREA) & AGE == "65-") |> 
 	# data.frame des idbank
 	`[`(x = _, "idbank") |> 
-	# convertir le data.frame en numeric
+	# convertir le data.frame en character
 	unlist() |> 
 	# sélectionner la période pertinente des tableaux
 	get_insee_idbank(startPeriod = 2017, endPeriod = 2020) |> 
@@ -17,7 +17,7 @@ EvoMortStd = get_idbank_list("DECES-MORTALITE") |>
 	`[`(x = _, "OBS_VALUE") |> 
 	# convertir le data.frame en numeric
 	unlist() |> 
-	as.numeric() |>
+	unname() |>
 	# fonction pour calculer le taux de croissance de la dernière année par rapport à la moyenne des trois années précédentes
 	(function(data = _) { sapply(seq(1, length(data), by = 4), function(start) { ( data[start] - mean(data[(start+1):(start+3)]) ) / mean(data[(start+1):(start+3)]) }) })() |>
 	print()
@@ -31,18 +31,14 @@ PondPop60 = get_idbank_list("TCRED-ESTIMATIONS-POPULATION") |>
 	(\(data) {data[order(data$REF_AREA), ] })() |> 
 	`[`(x = _, "OBS_VALUE") |> 
 	unlist() |> 
-	as.numeric() |>
+	unname() |>
 	(\(data) { sapply(seq(1, length(data), by = 2), \(start) { (data[start]) * data[start+1] }) })() |>
 	print()
 
 # évolution du taux de patients
-# source: https://www.scansante.fr/applications/taux-de-recours-tous-champs/submit?snatnav=&mbout=part1&champ=tous+champs&unite=patients&version=v2021&taux=stand&tgeo=dep
 # période: 2017 à 2020
 # type de taux: taux standardisés
 # niveau géographique: département
-# EvoTxPat = scan("~/programmation/R/mortalite_vs_recours/AtihTauxPatients1000Std.tsv", what = numeric(), quiet = TRUE) |>
-# 	(\(data) { sapply(seq(1, length(data), by = 4), function(start) { ( data[start] - mean(data[(start+1):(start+3)]) ) / mean(data[(start+1):(start+3)]) }) })() |>
-# 	print()
 
 # convertir les caractères de chiffres en nombres
 clean_numeric = \(x) {
@@ -77,7 +73,7 @@ wtd.cor(EvoMortStd, EvoTxPat, weight = PondPop60) |>
 # Créer le fichier PNG
 png("EvoMortStdVsEvoTxPat.png")
 # Dessiner le nuage de points
-plot(EvoTxPat, EvoMortStd, cex = PondPop60/10000000, main = "Δ Mortalité standardisée vs Δ recours aux soins", xlab = "Δ recours aux soins", ylab = "Δ mortalité standardisée")
+plot(EvoTxPat, EvoMortStd, cex = PondPop60/10000000, main = "Δ Mortalité standardisée vs Δ recours aux soins, 2020", xlab = "Δ recours aux soins", ylab = "Δ mortalité standardisée")
 # Ajuster la régression linéaire et ajouter la ligne de tendance:
 lm(EvoMortStd ~ EvoTxPat, weights = PondPop60) |> abline(col = "red")
 # Fermer le fichier PNG
