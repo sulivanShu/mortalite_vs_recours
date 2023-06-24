@@ -55,7 +55,7 @@ EvoTxPat = html_page |>
 	(\(df) {
 		 names(df) = paste(names(df), df[1, ], sep = " ")
 		 df[, -1] = lapply(df[, -1], clean_numeric)
-		 df[-c(1, tail(seq_len(nrow(df)), 3)), ]
+		 df |> tail(-1) |> head(-3)
 })() |>
 (\(df) {
 	 sapply(1:nrow(df), \(i) {
