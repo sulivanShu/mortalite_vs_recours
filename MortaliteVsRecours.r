@@ -5,6 +5,7 @@ library(rvest)
 library(weights)
 
 # Évolution du taux de mortalité standardisé de 2020 par rapport à la moyenne des trois années précédantes.
+# Usage de la bibliothèque insee. sa documentation se trouve ici: https://cran.r-project.org/web/packages/insee/insee.pdf
 EvoMortStd = get_idbank_list("DECES-MORTALITE") |> 
 	subset(FREQ == "A" & INDICATEUR == "TAUX_MORTALITE_STANDARDISE" & grepl("^D", REF_AREA) & AGE == "65-") |> 
 	# data.frame des idbank
@@ -40,6 +41,8 @@ PondPop60 = get_idbank_list("TCRED-ESTIMATIONS-POPULATION") |>
 # type de taux: taux standardisés
 # niveau géographique: département
 
+# usage de la bibliothèque rvest: https://www.rdocumentation.org/packages/rvest/versions/1.0.3
+
 # convertir les caractères de chiffres en nombres
 clean_numeric = \(x) {
   x = gsub(",", ".", x) |> 
@@ -52,11 +55,14 @@ html_page = read_html("https://www.scansante.fr/applications/taux-de-recours-tou
 
 EvoTxPat = html_page |>
 	(\(data) {html_table(data)[[3]]})() |>
+	# nettoyage:
 	(\(df) {
 		 names(df) = paste(names(df), df[1, ], sep = " ")
 		 df[, -1] = lapply(df[, -1], clean_numeric)
 		 df |> tail(-1) |> head(-3)
 })() |>
+
+# calcul:
 (\(df) {
 	 sapply(1:nrow(df), \(i) {
 			(df[i, 5] - rowMeans(df[i, 2:4])) / rowMeans(df[i, 2:4])
@@ -67,6 +73,7 @@ unname() |>
 print()
 
 # Corrélation entre l'évolution de la mortalité standardisée et l'évolution du taux de recours aux soins hospitaliers, par département, 2020 par rapport à la moyenne 2017-2019, pondérée la population des plus de 60 ans dans chaque département
+# usage de la bibliothèque weights. https://www.rdocumentation.org/packages/rvest/versions/1.0.3
 wtd.cor(EvoMortStd, EvoTxPat, weight = PondPop60) |>
 	print()
 
