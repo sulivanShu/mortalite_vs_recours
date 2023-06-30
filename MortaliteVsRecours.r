@@ -5,7 +5,7 @@ library(rvest)
 library(weights)
 
 # Évolution du taux de mortalité standardisé de 2020 par rapport à la moyenne des trois années précédantes.
-# Usage de la bibliothèque insee. sa documentation se trouve ici: https://cran.r-project.org/web/packages/insee/insee.pdf
+# Usage de la bibliothèque insee. Sa documentation se trouve ici: https://cran.r-project.org/web/packages/insee/insee.pdf
 EvoMortStd = get_idbank_list("DECES-MORTALITE") |> 
 	subset(FREQ == "A" & INDICATEUR == "TAUX_MORTALITE_STANDARDISE" & grepl("^D", REF_AREA) & AGE == "65-") |> 
 	# data.frame des idbank
@@ -73,7 +73,7 @@ unname() |>
 print()
 
 # Corrélation entre l'évolution de la mortalité standardisée et l'évolution du taux de recours aux soins hospitaliers, par département, 2020 par rapport à la moyenne 2017-2019, pondérée la population des plus de 60 ans dans chaque département
-# usage de la bibliothèque weights. https://www.rdocumentation.org/packages/rvest/versions/1.0.3
+# usage de la bibliothèque weights: https://www.rdocumentation.org/packages/rvest/versions/1.0.3
 wtd.cor(EvoMortStd, EvoTxPat, weight = PondPop60) |>
 	print()
 
