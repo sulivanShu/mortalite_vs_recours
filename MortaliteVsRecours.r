@@ -61,7 +61,6 @@ EvoTxPat = html_page |>
 		 df[, -1] = lapply(df[, -1], clean_numeric)
 		 df |> tail(-1) |> head(-3)
 })() |>
-
 # calcul:
 (\(df) {
 	 sapply(1:nrow(df), \(i) {
