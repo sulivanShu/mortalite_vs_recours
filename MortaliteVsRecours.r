@@ -25,7 +25,7 @@ EvoMortStd =
 			 endPeriod = 2020
 			 ) |> 
 	# sélectionner les valeurs pertinentes
-	subset(select = "OBS_VALUE") |> 
+	_$OBS_VALUE |> 
 	# convertir le data.frame en numeric
 	unlist() |> 
 	unname() |>
@@ -41,7 +41,8 @@ EvoMortStd =
 	print()
 
 # Nombre de personnes de plus de 60 ans par département fois 100
-PondPop60 = get_idbank_list("TCRED-ESTIMATIONS-POPULATION") |>
+PondPop60 =
+	get_idbank_list("TCRED-ESTIMATIONS-POPULATION") |>
 	subset(
 	       subset = 
 		       grepl("^D", REF_AREA) & 
@@ -53,7 +54,7 @@ PondPop60 = get_idbank_list("TCRED-ESTIMATIONS-POPULATION") |>
 	unlist() |> 
 	get_insee_idbank(startPeriod = 2020, endPeriod = 2020) |> 
 	(\(data) {data[order(data$REF_AREA), ] })() |> 
-	subset(select = "OBS_VALUE") |> 
+	_$OBS_VALUE |> 
 	unlist() |> 
 	unname() |>
 	(\(data) { 
@@ -93,12 +94,12 @@ EvoTxPat =
 		 names(df) = paste(names(df), df[1, ], sep = " ")
 		 df[, -1] = lapply(df[, -1], clean_numeric)
 		 df |> tail(-1) |> head(-3)
-})() |>
+	})() |>
 # calcul:
 	(\(df) {
 		 sapply(1:nrow(df), \(i) {
 				(df[i, 5] - rowMeans(df[i, 2:4])) / rowMeans(df[i, 2:4])
-			} ) |> 
+			}) |> 
 		unlist()
 	})() |> 
 	unname() |>
