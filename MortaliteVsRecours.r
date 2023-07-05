@@ -111,12 +111,12 @@ wtd.cor(EvoMortStd, EvoTxPat, weight = PondPop60) |>
 	print()
 
 # Créer le fichier PNG
-png("EvoMortStdVsEvoTxPat.png")
+png("EvoMortStdVsEvoTxPat.png", width = 1000, height = 1000)
 # Dessiner le nuage de points
 plot(
      x = EvoTxPat,
      y = EvoMortStd,
-     cex = PondPop60/10000000,
+     cex = PondPop60/5000000,
      main = "Δ Mortalité standardisée vs Δ recours aux soins, 2020",
      xlab = "Δ recours aux soins",
      ylab = "Δ mortalité standardisée"

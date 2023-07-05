@@ -25,12 +25,12 @@ https://digital.nhs.uk/data-and-information/publications/statistical/hospital-ad
 https://digital.nhs.uk/data-and-information/publications/statistical/hospital-admitted-patient-care-activity/2018-19
 https://digital.nhs.uk/data-and-information/publications/statistical/hospital-admitted-patient-care-activity/2017-18
 
-Section:
+Sections:
 
-Hospital Admitted Patient Care Activity, 2020-21: Provider-level analysis
-Hospital Admitted Patient Care Activity, 2019-20: Provider-level analysis
-Hospital Admitted Patient Care Activity, 2018-19: Provider-level analysis
-Hospital Admitted Patient Care Activity, 2017-18: Provider-level analysis
+Hospital Admitted Patient Care Activity, 2020-21: Hospital providers
+Hospital Admitted Patient Care Activity, 2019-20: Hospital providers
+Hospital Admitted Patient Care Activity, 2018-19: Hospital providers
+Hospital Admitted Patient Care Activity, 2017-18: Hospital providers
 
 hosp-epis-stat-admi-hosp-prov-2015-16-tab.xlsx
 hosp-epis-stat-admi-hosp-prov-2016-17-tab.xlsx
@@ -39,6 +39,8 @@ hosp-epis-stat-admi-hosp-prov-2021-22-tab.xlsx
 hosp-epis-stat-admi-prov-2017-18-tab.xlsx
 hosp-epis-stat-admi-prov-2018-19-tab.xlsx
 hosp-epis-stat-admi-prov-2019-20-tab.xlsx
+
+pas d'erreur sur les noms, il s'agit bien de ces noms-ci.
 
 ces fichiers contiennent le nom de tous les hôpitaux d'Angleterre, leur identifiant, et des indicateurs de recours aux soins. L'indicateur utilisé est "Finished consultant episodes".
 
