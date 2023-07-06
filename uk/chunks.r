@@ -16,8 +16,6 @@ clusterEvalQ(cl, {
 })
 setDefaultCluster(cl)
 
-getDefaultCluster()
-
 system.time({
 	# Pour une exécution parallèle avec parLapply
 	# Possibilité d'ajouter autant de taches parallèles que nécessaire, qui seront ensuite identifiées par des conditions if (task = ???) {}. Possibilité d'imbriquer des conditions. 
@@ -102,12 +100,12 @@ system.time({
 						   df
 			     })()
 				  clean_hosp[,c("Code", "Finished consultant episodes")] |>
-					  _$"Code" |>
- 					  (\(df) {
- 						   df[order(df)]
- 			     })() |>
+					  (\(df) {
+						   df[order(df$"Code"),]
+			     })() |>
 					  print()
 	}) |>
+	    lapply(function(df) subset(df, Code %in% c("8A718",	"8G301",	"8HE28",	"8J285",	"NT438",	"NYW20",	"R1E",	"R1J",	"RA3",	"RBA",	"RC1",	"RDD",	"RE9",	"RGQ",	"RJF",	"RLN",	"RNL",	"RQ6",	"RQ8",	"RR1",	"RXKTC",	"RY1"))) |>
 	    print()
 })
 
@@ -137,28 +135,31 @@ setdiff(clean_hosp_codes_vector, nhs_geo_code)
 			 Geographic.Local.Authority.Name = c("CITY OF WESTMINSTER", "LONDON BOROUGH OF CAMDEN")
 			 )) 
 
-"8A718",	"Westminster",
-"8G301",	"Horsham",
-"8HE28",	"Camden",
-"8J285",	"Herefordshire, County of", 
-"NT438",	"Maidstone",
-"NYW20",	"Chelmsford",
-"R1E",	"Newcastle-under-Lyme",
-"R1J",	"Tewkesbury",
-"RA3",	"North Somerset",
-"RBA",	"Somerset",
-"RC1",	"Bedford",
-"RDD",	"Basildon",
-"RE9",	"South Tyneside",
-"RGQ",	"Ipswich",
-"RJF",	"East Staffordshire"
-"RLN",	"Sunderland",
-"RNL",	"Cumberland",
-"RQ6",	"Liverpool",
-"RQ8",	"Chelmsford",
-"RR1",	"Birmingham",
-"RXKTC",	"Birmingham",
-"RY1"	"Liverpool"
+
+"source: wikipédia, principalement"
+
+"8A718",	"713",	"CITY OF WESTMINSTER",	"Non-Nhs organisation - LONDON CLINIC"
+"8G301",	"E07000227",	"Horsham",	"disparu des radars en 2019. 90 consultations en 2018. pas de fermeture enregistrée. Centre de psychothérapie."
+"8HE28",	"702",	"LONDON BOROUGH OF CAMDEN",	"Non-Nhs organisation - HARLEY STREET ON 15"
+"8J285",	"415",	"HEREFORDSHIRE COUNCIL",	"Non-Nhs organisation - SHAW HEALTHCARE,	"LEDBURY" LIMITED"
+"NT438",	"E07000110",	"Maidstone",	"In April 2019, the firm closed the Somerfield Hospital in Maidstone. Fernbrae Hospital in Dundee is to close in May 2019."
+"NYW20",	"E07000070",	"Chelmsford",	"This hospital has closed.,	"31/03/2019"" 
+"R1E",	"E07000195",	"Newcastle-under-Lyme",	"It merged with the South Staffordshire and Shropshire Healthcare NHS Foundation Trust in 2018 forming a new organisation called Midlands Partnership NHS Foundation Trust.",	"413"
+"R1J",	"E07000083",	"Tewkesbury",	"In September 2017 the trust announced plans to merge with 2gether NHS Foundation Trust, which also covers Herefordshire.[6] The merger was completed in October 2019 to form Gloucestershire Health and Care NHS Foundation Trust.",	"904"
+"RA3",	"910",	"NORTH SOMERSET COUNCIL",	"WESTON AREA HEALTH NHS TRUST In January 2018, it was announced that the Weston trust was to merge with University Hospitals Bristol NHS Foundation Trust, which runs eight hospitals in the nearby city of Bristol.[12] On 1 April 2020, the merger was completed with the formation of the University Hospitals Bristol and Weston NHS Foundation Trust.",	"909"
+"RBA",	"905",	"SOMERSET COUNCIL",	"In 2018, the trust announced plans to merge with Somerset Partnership NHS Foundation Trust, a mental health trust.[3] The merger completed in 2020.",	"905"
+"RC1",	"625",	"BEDFORD BOROUGH COUNCIL",	"In September 2017 plans were announced to merge the Bedford Hospital NHS Trust with Luton and Dunstable University Hospital NHS Foundation Trust",	"611".
+"RDD",	"E07000066",	"Basildon",	"A merger with Southend University Hospital NHS Foundation Trust and Mid Essex Hospital Services NHS Trust was proposed in January 2018.[3] On 31 July 2019 the Secretary of State for Health and Social Care endorsed the merger and a provisional date of 1 April 2020 was agreed. [in the Mid and South Essex NHS Foundation Trust]",	"621"
+"RE9",	"109",	"SOUTH TYNESIDE COUNCIL",	"It merged with City Hospitals Sunderland NHS Foundation Trust to form South Tyneside and Sunderland NHS Foundation Trust in April 2019.",	"110"
+"RGQ",	"E07000202",	"Ipswich",	"It is now managed by East Suffolk and North Essex NHS Foundation Trust which was formed on 1 July 2018 by the merging of Ipswich Hospital NHS Trust with Colchester Hospital University NHS Foundation Trust.",	"620"
+"RJF",	"?",	"East Staffordshire",	"The trust merged with Derby Teaching Hospitals NHS Foundation Trust to form University Hospitals of Derby and Burton NHS Foundation Trust in July 2018.",	"507"
+"RLN",	"110",	"SUNDERLAND CITY COUNCIL",	"In May 2018 it agreed to merge with South Tyneside NHS Foundation Trust to form South Tyneside and Sunderland NHS Foundation Trust.",	"110" 
+"RNL",	"H6X4G",	"CUMBERLAND COUNCIL",	"in 2018 it proposed to merge with Cumbria Partnership NHS Foundation Trust.[2] The merger took place in October 2019. The new organisation is called North Cumbria Integrated Care NHS Foundation Trust.",	"H6X4G"
+"RQ6",	"?",	"Liverpool",	"It merged with the Aintree University Hospitals NHS Foundation Trust to form the Liverpool University Hospitals NHS Foundation Trust on 1 October 2019.",	"316"
+"RQ8",	"Chelmsford",	"A merger with Basildon and Thurrock University Hospitals NHS Foundation Trust and Southend University Hospital NHS Foundation Trust was proposed in January 2018. On 31 July 2019 the Secretary of State for Health and Social Care endorsed the merger and a provisional date of 1 April 2020 was agreed. ----- Southend University Hospital NHS Foundation Trust was an NHS foundation trust which ran Southend University Hospital. It merged with two other trusts to form Mid and South Essex NHS Foundation Trust on 1 April 2020.",	"621"
+"RR1",	"Birmingham",	"In September 2016 HEFT announced plans to merge with the University Hospitals Birmingham NHS Foundation Trust.[2] The merger took place on 1 April 2018.",	"406"
+"RXKTC",	"406",	"BIRMINGHAM CITY COUNCIL",	"hopital"
+"RY1"	"316",	"LIVERPOOL CITY COUNCIL" "The Trust entered a dispersal process under NHS England instruction. South Sefton CCG awarded their contract to Mersey Care NHS Foundation Trust. Bridgewater Community Healthcare NHS Foundation Trust was to take over the trust's contract in the Liverpool City Council boundaries. This was abandoned in March 2017 by Liverpool Clinical Commissioning Group after concerns over the due diligence process overseen by NHS Improvement arose.",	"probablement 316"
 
 help("%in%")
 

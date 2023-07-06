@@ -53,21 +53,9 @@ ODS_2023-06-20T170741.csv
 
 Ce fichier indique les codes géographiques NHS et postaux des hôpitaux d'Angleterre, à l'exeption de "8A718 London Clinic" et "8HE28 Harley Street On 15" qui doivent être ajoutés manuellement.
 
-Selon:
+### Codes géographiques manquant
 
-https://odsportal.digital.nhs.uk/Organisation/OrganisationDetails?organisationId=67432&showOpenChildredOnly=True
-
-https://www.streetcheck.co.uk/postcode/w1g6bw
-
-"8A718 London Clinic" a pour autorité administrative: Westminster (ONS: E09000033, NHS: 713)
-
-Selon:
-
-https://odsportal.digital.nhs.uk/Organisation/OrganisationDetails?organisationId=75403&showOpenChildredOnly=True
-
-https://www.streetcheck.co.uk/postcode/nw12bu
-
-"8HE28 Harley Street On 15" a pour autorité administrative: Camden (ONS: E09000007, NHS: 702)
+Voir le fichier: genealogie.csv
 
 # Code géographique ONS
 
