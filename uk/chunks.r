@@ -1,5 +1,4 @@
 #!/usr/bin/Rscript
-
 library(readxl)
 library(tibble)
 # la librairie tibble n'est pas nécessaire, mais elle est utilisée pour mieux voir les dataframes
@@ -13,7 +12,6 @@ clusterEvalQ(cl, {
 		     library(tibble)
 })
 setDefaultCluster(cl)
-
 system.time({
 	# Pour une exécution parallèle avec parLapply
 	# Possibilité d'ajouter autant de taches parallèles que nécessaire, qui seront ensuite identifiées par des conditions if (task = ???) {}. Possibilité d'imbriquer des conditions. 
@@ -23,7 +21,7 @@ system.time({
 		       "2019" = "2019",
 		       "2020" = "2020",
 		       "nhs_geo_code" = "nhs_geo_code",
-		       "nhs2ons_code" = "nhs2ons_code"
+		       "clean_nhs2ons_code" = "clean_nhs2ons_code"
 	)
 	clusterEvalQ(cl, {
 			     hosp_list = c(
@@ -129,7 +127,7 @@ system.time({
 			  print()
 		  return(nhs_geo_code)
 				  }
-				  if (task == "nhs2ons_code") {
+				  if (task == "clean_nhs2ons_code") {
 					  ## Correspondance `Geographic.Local.Authority.Code` et `ONS Geography` (NHS geographic code -- ONS geographic code)
 					  nhs2ons_code =
 						  read_excel("LA-Type-B-February-2020-4W5PA.xls", sheet = "LA - by type of care") 
@@ -149,6 +147,74 @@ system.time({
 	    print()
 })
 
+# Solution sérielle
+# 80-90ms sans print()
+# plus rapide que la version parallèle
+system.time({
+	years_tasks_list = c(
+			     "2017" = "2017",
+			     "2018" = "2018",
+			     "2019" = "2019",
+			     "2020" = "2020"
+	) 
+	years_tasks_list |>
+		lapply(function(task) {
+			       merge(clean_hosp_codes_list$"nhs_geo_code", clean_hosp_codes_list[[years_tasks_list[task]]], by = "Code") |>
+				       (\(df) {
+						df[order(df$"Geographic.Local.Authority.Code"),]
+							}
+			       )() |>
+		       # Fusion du résultat avec le fichier clean_nhs2ons_code. Permet d'associer le code géographique NHS au code géographique ONS.
+		       merge(clean_hosp_codes_list$"clean_nhs2ons_code", by = "Geographic.Local.Authority.Code") |>
+		       _[c("ONS Geography", "Finished consultant episodes")] |> 
+		       # grouper par code géographique ONS et sommer les éléments de chaque groupe.
+		       (\(df) {
+				df = aggregate(df$"Finished consultant episodes", by = df$"ONS Geography" |> list(), FUN = sum)
+				names(df) = c("ONS.Geography", "Finished consultant episodes") 
+				df
+			       })() |>
+		       as_tibble()
+	}
+	) |>
+	    print()
+})
+
+# solution parallèle
+# 120-130ms sans print()
+# moins rapide que la solution sérielle
+system.time({
+	years_tasks_list = c(
+			     "2017" = "2017",
+			     "2018" = "2018",
+			     "2019" = "2019",
+			     "2020" = "2020"
+	) 
+	clusterExport(cl, c("clean_hosp_codes_list","years_tasks_list"))
+	years_tasks_list |>
+		parLapply(cl = NULL, function(task) {
+				  merge(clean_hosp_codes_list$"nhs_geo_code", clean_hosp_codes_list[[years_tasks_list[task]]], by = "Code") |>
+					  (\(df) {
+						   df[order(df$"Geographic.Local.Authority.Code"),]
+							}
+				  )() |>
+			  # Fusion du résultat avec le fichier clean_nhs2ons_code. Permet d'associer le code géographique NHS au code géographique ONS.
+			  merge(clean_hosp_codes_list$"clean_nhs2ons_code", by = "Geographic.Local.Authority.Code") |>
+			  _[c("ONS Geography", "Finished consultant episodes")] |> 
+			  # grouper par code géographique ONS et sommer les éléments de chaque groupe.
+			  (\(df) {
+				   df = aggregate(df$"Finished consultant episodes", by = df$"ONS Geography" |> list(), FUN = sum)
+				   names(df) = c("ONS.Geography", "Finished consultant episodes") 
+				   df
+				  })() |>
+			  as_tibble()
+	}
+	) |>
+	    print()
+})
+
+
+?merge
+
 capabilities("fifo")
 
 help("tempfile")
@@ -161,6 +227,9 @@ packageVersion("base")
 
 tempfile(fileext = ".fifo")
 
+setdiff(c(1,2,3),c(1,2))
+
+setdiff(clean_hosp_codes_vector, nhs_geo_code)
 
 zz <- tempfile() |>
 	fifo("w+")
@@ -176,137 +245,3 @@ clean_hosp_codes_vector =
 	unique() |>
 	unname() |>
 	print()
-
-
-
-nhs_geo_code =
-	read.csv("ODS_2023-06-20T170741.csv") |>
-	_$"Code" |>
-	print()
-
-setdiff(c(1,2,3),c(1,2))
-
-setdiff(clean_hosp_codes_vector, nhs_geo_code)
-
-
-rbind(data.frame(
-		 Code = c("8A718","8HE28"),
-		 Geographic.Local.Authority.Code = c("713","702"),
-		 Geographic.Local.Authority.Name = c("CITY OF WESTMINSTER", "LONDON BOROUGH OF CAMDEN")
-		 )) 
-
-help("%in%")
-
-help("union")
-
-setDefaultCluster(NULL)
-stopCluster(cl)
-
-# # Correspondances
-
-# Les objets dont le nom commence par "clean_" sont des objets nettoyés, utilisables dans les calculs
-
-# ## Correspondance `Code` -- `Finished consultant episodes` (Code NHS de l'établissement vs indicateur de recours au soin) 
-# lire le fichier qui contient les indicateurs de recours aux soins hospitaliers
-hosp =
-	read_excel("hosp-epis-stat-admi-hosp-prov-2020-21-tab.xlsx")
-
-# Éditer une ligne qui servira ensuite de noms pour les colonnes. "Code" est le code NHS de l'établissement.
-hosp[7,c(2,3,49)] =
-	c("Code", "Hospital.provider.name", "Zero.bed.day.cases.Emergency") |>
-	as.list() |>
-	print()
-
-# Renommer des colonnes
-colnames(hosp) =
-	hosp[7,] |>
-	gsub("NA", NA, x=_) |>
-	print()
-
-# Nettoyage du fichier 
-# Dans le fichier, le caractère * signfie soit un nombre entre 1 et 7, soit "Not available".
-# Fonction pour remplacer le caractère "*" par une valeur numérique. J'ai choisi 3 pour avoir un entier entre 1 et 7. Possibilité d'être plus précis.
-replace_star_by_3 =
-	\(x) {
-		gsub("\\*", "3", x) |> as.integer() 
-	}
-# Fonction pour remplacer le caratère "*" par la valeur "Not available".
-replace_star_by_NA =
-	\(x) {
-		gsub("\\*", NA, x) |> as.numeric()
-	}
-# Les codes se terminant par "-X" sont des codes de réserve provisoires. Il faut supprimer ce suffixe pour avoir le code normal. 
-replace_X_code =
-	\(x) {
-		gsub("-X", "", x)
-	}
-# Sélectionner les cellules utiles du tableau. Lignes 19 à 509, colonnes dont le nom n'est pas NA (colonnes non-vides)
-clean_hosp =
-	hosp[19:509, hosp |> names() |> (\(x) !is.na(x))()] |>
-	(\(df) {
-		 df[, -c(1,2,12,14,16)] = lapply(df[, -c(1,2,12,14,16)], replace_star_by_3)
-		 df[, c(12,14,16)] = lapply(df[, c(12,14,16)], replace_star_by_NA)
-		 df[, "Code"] = lapply(df[, "Code"], replace_X_code)
-		 df
-})() |>
-(\(df) {
-	 df[order(df$"Code"),]
-})() |>
-_[c("Code","Finished consultant episodes")] |> 
-print()
-
-## Correspondance `Code` -- `Geographic.Local.Authority.Code` (Code NHS de l'établissement -- code NHS géographique) 
-# Ajout manuel des hôpitaux qui manquent.
-nhs_geo_code =
-	read.csv("ODS_2023-06-20T170741.csv") |>
-	rbind(
-	      read.csv("genealogie.csv") |>
-		      _[,c("Code",
-			   "Geographic.Local.Authority.Code",
-			   "Geographic.Local.Authority.Name")]
-	      ) |>
-(\(df) {
-	 df[order(df$"Code"),]
-	      })() |>
-_$Geographic.Local.Authority.Code |>
-unique() |>
-print()
-
-## Correspondance `Geographic.Local.Authority.Code` et `ONS Geography` (NHS geographic code -- ONS geographic code)
-nhs2ons_code =
-	read_excel("LA-Type-B-February-2020-4W5PA.xls", sheet = "LA - by type of care") 
-colnames(nhs2ons_code) =
-	nhs2ons_code[12,] |>
-	gsub("Code","Geographic.Local.Authority.Code", x=_)
-clean_nhs2ons_code =
-	nhs2ons_code[15:164,c("ONS Geography", "Geographic.Local.Authority.Code")] |>
-	(\(df) {
-		 df[order(df$"Geographic.Local.Authority.Code"),]
-	      })() |>
-_$Geographic.Local.Authority.Code |>
-unique() |>
-print()
-
-help("$")
-
-# ## Fusion des fichiers clean_hosp et nhs_geo_code selon `Code` (le code de l'établissement)
-
-# Permet d'associer le code NHS de l'établissement à son code géographique NHS.
-
-nhs_geo_code_clean_hosp =
-	merge(nhs_geo_code, clean_hosp, by = "Code") |>
-	(\(df) {
-		 df[order(df$"Geographic.Local.Authority.Code"),]
-	      }
-	)() |>
-# Fusion du résultat avec le fichier clean_nhs2ons_code. Permet d'associer le code géographique NHS au code géographique ONS.
-merge(clean_nhs2ons_code, by = "Geographic.Local.Authority.Code") |>
-_[c("ONS Geography", "Finished consultant episodes")] |> 
-# grouper par code géographique ONS et sommer les éléments de chaque groupe.
-(\(df) {
-	 df = aggregate(df$`Finished consultant episodes`, by = df$`ONS Geography` |> list(), FUN = sum)
-	 names(df) = c("ONS.Geography", "Finished consultant episodes") 
-	 df
-	})() |>
-as_tibble() |>
-print()
