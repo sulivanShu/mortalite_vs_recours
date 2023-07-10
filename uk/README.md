@@ -57,6 +57,12 @@ Ce fichier indique les codes géographiques NHS et postaux des hôpitaux d'Angle
 
 Voir le fichier: genealogie.csv
 
+Entre 2017 et 2020, certains fournisseurs de soin ont disparu et d'autres ont fusionnés avec d'autres fournisseurs de soins.
+
+En fusionnant avec d'autres fournisseurs de soins, certains fournisseurs de soins ont changé d'autorité administrative.
+
+Comme l'étude porte sur l'offre de soins réelle, et non sur les transferts administratifs
+
 # Code géographique ONS
 
 https://www.england.nhs.uk/statistics/statistical-work-areas/delayed-transfers-of-care/delayed-transfers-of-care-data-2019-20/
