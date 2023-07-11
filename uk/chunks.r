@@ -12,23 +12,34 @@ clusterEvalQ(cl, {
 		     library(tibble)
 })
 setDefaultCluster(cl)
+
 system.time({
 	# Pour une exécution parallèle avec parLapply
 	# Possibilité d'ajouter autant de taches parallèles que nécessaire, qui seront ensuite identifiées par des conditions if (task = ???) {}. Possibilité d'imbriquer des conditions. 
 	tasks_list = c(
-		       "2017" = "2017",
-		       "2018" = "2018",
-		       "2019" = "2019",
-		       "2020" = "2020",
+		       "2017_admi" = "2017_admi",
+		       "2018_admi" = "2018_admi",
+		       "2019_admi" = "2019_admi",
+		       "2020_admi" = "2020_admi",
+		       "2017_morta" = "2017_morta",
+		       "2018_morta" = "2018_morta",
+		       "2019_morta" = "2019_morta",
+		       "2020_morta" = "2020_morta",
 		       "nhs_geo_code" = "nhs_geo_code",
 		       "clean_nhs2ons_code" = "clean_nhs2ons_code"
 	)
 	clusterEvalQ(cl, {
 			     hosp_list = c(
-					   "2017" = "hosp-epis-stat-admi-prov-2017-18-tab.xlsx",
-					   "2018" = "hosp-epis-stat-admi-prov-2018-19-tab.xlsx",
-					   "2019" = "hosp-epis-stat-admi-prov-2019-20-tab.xlsx",
-					   "2020" = "hosp-epis-stat-admi-hosp-prov-2020-21-tab.xlsx"
+					   "2017_admi" = "hosp-epis-stat-admi-prov-2017-18-tab.xlsx",
+					   "2018_admi" = "hosp-epis-stat-admi-prov-2018-19-tab.xlsx",
+					   "2019_admi" = "hosp-epis-stat-admi-prov-2019-20-tab.xlsx",
+					   "2020_admi" = "hosp-epis-stat-admi-hosp-prov-2020-21-tab.xlsx"
+			     )
+			     morta_list = c(
+					    "2017_morta" = "deathsregisteredbyareaofusualresidence2017.xls",
+					    "2018_morta" = "deathsregisteredbyareaofusualresidence2018.xls",
+					    "2019_morta" = "deathsregisteredbyareaofusualresidence2019.xls",
+					    "2020_morta" = "deathsregisteredbyareaofusualresidence2020.xlsx"
 			     )
 	})
 	clean_hosp_codes_list =
@@ -37,14 +48,14 @@ system.time({
 				  # Traitements en parallèle.
 				  # Sur un ordinateur multicore, parLapply() est deux fois plus rapide que lapply()
 				  # Traitement des fichiers xlsx, sur les statistiques de recours aux soins par fournisseurs de soins
-				  if (task %in% c("2017", "2018", "2019", "2020"))
+				  if (task %in% c("2017_admi", "2018_admi", "2019_admi", "2020_admi"))
 				  {
-					  # Chargement des fichiers. Le numéro de chaque tâche dans le vecteur tasks_list (2017:2020) est aussi le numéro de chaque fichier dans le vecteur hosp_list. On peut donc réutiliser cet argument. 
+					  # Chargement des fichiers. Le numéro de chaque tâche dans le vecteur tasks_list (2017_admi:2020_admi) est aussi le numéro de chaque fichier dans le vecteur hosp_list. On peut donc réutiliser cet argument. 
 					  hosp = hosp_list[task] |>
 						  read_excel() |>
 						  print()
 					  # Traitement
-					  if (task == "2020") {
+					  if (task == "2020_admi") {
 						  hosp = hosp[,-1]
 					  }
 					  hosp[7,c(1,2,48)] =
@@ -57,13 +68,13 @@ system.time({
 						  gsub("NA", NA, x=_) |>
 						  print()
 					  # Sélectionner les lignes pertinentes, qui sont différentes pour chaque fichier.
-					  if (task == "2017") {
+					  if (task == "2017_admi") {
 						  hosp = hosp[16:499,]
-					  } else if (task == "2018") {
+					  } else if (task == "2018_admi") {
 						  hosp = hosp[17:487,]
-					  } else if (task == "2019") {
+					  } else if (task == "2019_admi") {
 						  hosp = hosp[19:502,]
-					  } else if (task == "2020") {
+					  } else if (task == "2020_admi") {
 						  hosp = hosp[19:509,]
 					  }
 					  # Nettoyage du fichier 
@@ -127,6 +138,58 @@ system.time({
 			  print()
 		  return(nhs_geo_code)
 				  }
+				  # Mortalité
+				  if (task %in% c("2017_morta", "2018_morta", "2019_morta", "2020_morta"))
+				  {
+					  morta = morta_list[task] |>
+						  read_excel(sheet = "Table 1a") |>
+						  print()
+					  # Traitement
+					  # ne pas oublier de convertir des colonnes de caractères en colonnes de nombres
+					  if (task == "2020_morta") {
+					  colnames(morta) =
+						  morta[2,]
+					  morta = morta[3:423,c("Area codes","Populations Number (thousands) of Persons all ages","Deaths of Persons all ages")]
+					  }
+					  else {
+						  if (task == "2017_morta") {
+							  morta = morta[11:512,c(1,3,6)]
+						  }
+						  if (task == "2018_morta") {
+							  morta = morta[11:501,c(1,3,6)]
+						  }
+						  if (task == "2019_morta") {
+							  morta = morta[10:495,c(1,3,6)]
+						  }
+						  morta = morta |>
+							  na.omit()
+						  colnames(morta) = c("Area codes","Populations Number (thousands) of Persons all ages","Deaths of Persons all ages")
+					  }
+					  morta$"Populations Number (thousands) of Persons all ages" = morta$"Populations Number (thousands) of Persons all ages" |>
+					  as.numeric() * 1000
+				  morta$"Deaths of Persons all ages" = morta$"Deaths of Persons all ages" |>
+					  as.integer()
+					  return(morta)
+				  }
+				  ## Correspondance `Code` -- `Geographic.Local.Authority.Code` (Code NHS de l'établissement -- code NHS géographique) 
+				  if (task == "nhs_geo_code") {
+					  nhs_geo_code =
+						  read.csv("ODS_2023-06-20T170741.csv") |>
+						  _[,c("Code","Geographic.Local.Authority.Code")] |>
+						  # Ajout manuel des hôpitaux qui manquent
+						  rbind(
+							read.csv("genealogie.csv") |>
+								_[,c("Code",
+								     "Geographic.Local.Authority.Code"
+								     )]
+							) |>
+			  (\(df) {
+				   df[order(df$"Code"),]
+							})() |>
+			  as_tibble() |>
+			  print()
+		  return(nhs_geo_code)
+				  }
 				  if (task == "clean_nhs2ons_code") {
 					  ## Correspondance `Geographic.Local.Authority.Code` et `ONS Geography` (NHS geographic code -- ONS geographic code)
 					  nhs2ons_code =
@@ -152,10 +215,10 @@ system.time({
 # plus rapide que la version parallèle
 system.time({
 	years_tasks_list = c(
-			     "2017" = "2017",
-			     "2018" = "2018",
-			     "2019" = "2019",
-			     "2020" = "2020"
+			     "2017_admi" = "2017_admi",
+			     "2018_admi" = "2018_admi",
+			     "2019_admi" = "2019_admi",
+			     "2020_admi" = "2020_admi"
 	) 
 	years_tasks_list |>
 		lapply(function(task) {
@@ -184,10 +247,10 @@ system.time({
 # moins rapide que la solution sérielle
 system.time({
 	years_tasks_list = c(
-			     "2017" = "2017",
-			     "2018" = "2018",
-			     "2019" = "2019",
-			     "2020" = "2020"
+			     "2017_admi" = "2017_admi",
+			     "2018_admi" = "2018_admi",
+			     "2019_admi" = "2019_admi",
+			     "2020_admi" = "2020_admi"
 	) 
 	clusterExport(cl, c("clean_hosp_codes_list","years_tasks_list"))
 	years_tasks_list |>
