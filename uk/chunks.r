@@ -194,6 +194,7 @@ system.time({
 			     "2019_admi" = "2019_admi",
 			     "2020_admi" = "2020_admi"
 	) 
+	evo.FCE.2017_2019.2020 =
 	years_tasks_list |>
 		lapply(function(task) {
 			       merge(clean_hosp_codes_list$"nhs_geo_code", clean_hosp_codes_list[[years_tasks_list[task]]], by = "Code") |>
@@ -229,6 +230,8 @@ system.time({
 })
 
 ?merge
+
+evo.FCE.2017_2019.2020
 
 # solution parallèle
 # 120-130ms sans print()
