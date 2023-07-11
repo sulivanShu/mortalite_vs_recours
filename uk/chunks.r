@@ -52,21 +52,18 @@ system.time({
 				  {
 					  # Chargement des fichiers. Le numéro de chaque tâche dans le vecteur tasks_list (2017_admi:2020_admi) est aussi le numéro de chaque fichier dans le vecteur hosp_list. On peut donc réutiliser cet argument. 
 					  hosp = hosp_list[task] |>
-						  read_excel() |>
-						  print()
+						  read_excel()
 					  # Traitement
 					  if (task == "2020_admi") {
 						  hosp = hosp[,-1]
 					  }
 					  hosp[7,c(1,2,48)] =
 						  c("Code", "Hospital.provider.name", "Zero.bed.day.cases.Emergency") |>
-						  as.list() |>
-						  print()
+						  as.list() 
 					  # Renommer des colonnes
 					  colnames(hosp) =
 						  hosp[7,] |>
-						  gsub("NA", NA, x=_) |>
-						  print()
+						  gsub("NA", NA, x=_)
 					  # Sélectionner les lignes pertinentes, qui sont différentes pour chaque fichier.
 					  if (task == "2017_admi") {
 						  hosp = hosp[16:499,]
@@ -115,35 +112,14 @@ system.time({
 			  _[,c("Code", "Finished consultant episodes")] |>
 			  (\(df) {
 				   df[order(df$"Code"),]
-			     })() |>
-			  print()
+			     })() 
 		  return(clean_hosp)
-				  }
-				  ## Correspondance `Code` -- `Geographic.Local.Authority.Code` (Code NHS de l'établissement -- code NHS géographique) 
-				  if (task == "nhs_geo_code") {
-					  nhs_geo_code =
-						  read.csv("ODS_2023-06-20T170741.csv") |>
-						  _[,c("Code","Geographic.Local.Authority.Code")] |>
-						  # Ajout manuel des hôpitaux qui manquent
-						  rbind(
-							read.csv("genealogie.csv") |>
-								_[,c("Code",
-								     "Geographic.Local.Authority.Code"
-								     )]
-							) |>
-			  (\(df) {
-				   df[order(df$"Code"),]
-							})() |>
-			  as_tibble() |>
-			  print()
-		  return(nhs_geo_code)
 				  }
 				  # Mortalité
 				  if (task %in% c("2017_morta", "2018_morta", "2019_morta", "2020_morta"))
 				  {
 					  morta = morta_list[task] |>
-						  read_excel(sheet = "Table 1a") |>
-						  print()
+						  read_excel(sheet = "Table 1a") 
 					  # Traitement
 					  # ne pas oublier de convertir des colonnes de caractères en colonnes de nombres
 					  if (task == "2020_morta") {
@@ -183,12 +159,11 @@ system.time({
 								     "Geographic.Local.Authority.Code"
 								     )]
 							) |>
-			  (\(df) {
-				   df[order(df$"Code"),]
-							})() |>
-			  as_tibble() |>
-			  print()
-		  return(nhs_geo_code)
+						  (\(df) {
+							   df[order(df$"Code"),]
+									})() |>
+						  as_tibble() 
+			  return(nhs_geo_code)
 				  }
 				  if (task == "clean_nhs2ons_code") {
 					  ## Correspondance `Geographic.Local.Authority.Code` et `ONS Geography` (NHS geographic code -- ONS geographic code)
@@ -201,8 +176,7 @@ system.time({
 						  nhs2ons_code[15:164,c("ONS Geography", "Geographic.Local.Authority.Code")] |>
 						  (\(df) {
 							   df[order(df$"Geographic.Local.Authority.Code"),]
-							})() |>
-			  print()
+							})() 
 		  return(clean_nhs2ons_code)
 				  }
 				  # Fin de la fonction parLapply()
@@ -235,12 +209,26 @@ system.time({
 				df = aggregate(df$"Finished consultant episodes", by = df$"ONS Geography" |> list(), FUN = sum)
 				names(df) = c("ONS.Geography", "Finished consultant episodes") 
 				df
-			       })() |>
-		       as_tibble()
+			       })() 
 	}
 	) |>
+	    (\(ls_admi) {
+		     ls_admi[[1]] |>
+			     merge(ls_admi[[2]], by = "ONS.Geography", suffixes = c(".2017",".2018")) |>
+			     merge(ls_admi[[3]], by = "ONS.Geography", suffixes = c(".2018",".2019")) |>
+			     merge(ls_admi[[4]], by = "ONS.Geography", suffixes = c(".2019",".2020")) |>
+			     (\(df) {
+				      df[,"evo.FCE.2017-2019.2020"] = (df[, 5] - rowMeans(df[, 2:4])) / rowMeans(df[, 2:4])
+				      df
+			       }
+			     )() |>
+	     _[c("ONS.Geography","evo.FCE.2017-2019.2020")] 
+	})() |>
+			     as_tibble() |>
 	    print()
 })
+
+?merge
 
 # solution parallèle
 # 120-130ms sans print()
