@@ -3,6 +3,7 @@ library(purrr)
 library(dplyr)
 library(readxl)
 library(tibble)
+library(weights)
 # la librairie tibble n'est pas nécessaire, mais elle est utilisée pour mieux voir les dataframes
 library(parallel)
 # créer le cluster et appeler les bibliothèques
@@ -11,9 +12,9 @@ cl =
 	makeCluster()
 clusterEvalQ(cl, {
 		     library(readxl)
+		     library(tibble)
 })
 setDefaultCluster(cl)
-
 system.time({
 	# Pour une exécution parallèle avec parLapply
 	# Possibilité d'ajouter autant de taches parallèles que nécessaire, qui seront ensuite identifiées par des conditions if (task = ???) {}. Possibilité d'imbriquer des conditions. 
@@ -114,7 +115,7 @@ system.time({
 			  (\(df) {
 				   df[order(df$"Code"),]
 			     })() 
-		  return(clean_hosp)
+			  return(clean_hosp)
 				  }
 				  # Mortalité
 				  if (task %in% c("2017_morta", "2018_morta", "2019_morta", "2020_morta"))
@@ -124,9 +125,9 @@ system.time({
 					  # Traitement
 					  # ne pas oublier de convertir des colonnes de caractères en colonnes de nombres
 					  if (task == "2020_morta") {
-					  colnames(morta) =
-						  morta[2,]
-					  morta = morta[3:423,c("Area codes","Populations Number (thousands) of Persons all ages","Deaths of Persons all ages")]
+						  colnames(morta) =
+							  morta[2,]
+						  morta = morta[3:423,c("Area codes","Populations Number (thousands) of Persons all ages","Deaths of Persons all ages")]
 					  }
 					  else {
 						  if (task == "2017_morta") {
@@ -143,9 +144,9 @@ system.time({
 						  colnames(morta) = c("Area codes","Populations Number (thousands) of Persons all ages","Deaths of Persons all ages")
 					  }
 					  morta$"Populations Number (thousands) of Persons all ages" = morta$"Populations Number (thousands) of Persons all ages" |>
-					  as.numeric() * 1000
-				  morta$"Deaths of Persons all ages" = morta$"Deaths of Persons all ages" |>
-					  as.integer()
+						  as.numeric() * 1000
+					  morta$"Deaths of Persons all ages" = morta$"Deaths of Persons all ages" |>
+						  as.integer()
 					  return(morta)
 				  }
 				  ## Correspondance `Code` -- `Geographic.Local.Authority.Code` (Code NHS de l'établissement -- code NHS géographique) 
@@ -160,11 +161,11 @@ system.time({
 								     "Geographic.Local.Authority.Code"
 								     )]
 							) |>
-						  (\(df) {
-							   df[order(df$"Code"),]
-									})() |>
-						  as_tibble() 
-			  return(nhs_geo_code)
+			  (\(df) {
+				   df[order(df$"Code"),]
+							})() |>
+			  as_tibble() 
+		  return(nhs_geo_code)
 				  }
 				  if (task == "clean_nhs2ons_code") {
 					  ## Correspondance `Geographic.Local.Authority.Code` et `ONS Geography` (NHS geographic code -- ONS geographic code)
@@ -178,27 +179,25 @@ system.time({
 						  (\(df) {
 							   df[order(df$"Geographic.Local.Authority.Code"),]
 							})() 
-		  return(clean_nhs2ons_code)
+						  return(clean_nhs2ons_code)
 				  }
 				  # Fin de la fonction parLapply()
 	}) |>
 	    print()
 })
 
-clean_hosp_codes_list
-
 # Solution sérielle
 # 80-90ms sans print()
 # plus rapide que la version parallèle
 system.time({
 	years_tasks_list_admi = c(
-			     "2017_admi" = "2017_admi",
-			     "2018_admi" = "2018_admi",
-			     "2019_admi" = "2019_admi",
-			     "2020_admi" = "2020_admi"
+				  "2017_admi" = "2017_admi",
+				  "2018_admi" = "2018_admi",
+				  "2019_admi" = "2019_admi",
+				  "2020_admi" = "2020_admi"
 	) 
 	evo.FCE.2017_2019.2020 =
-	years_tasks_list_admi |>
+		years_tasks_list_admi |>
 		lapply(function(task) {
 			       merge(clean_hosp_codes_list$"nhs_geo_code", clean_hosp_codes_list[[years_tasks_list_admi[task]]], by = "Code") |>
 				       (\(df) {
@@ -209,31 +208,140 @@ system.time({
 		       _[c("ONS Geography", "Finished consultant episodes")] |> 
 		       # grouper par code géographique ONS et sommer les éléments de chaque groupe.
 		       (\(df) {
+				df = df |>
+					mutate(
+					       `ONS Geography` = case_when(
+									   `ONS Geography` %in% c(
+												  "E08000037", 
+												  "E08000021", 
+												  "E08000022", 
+												  "E08000023", 
+												  "E08000024"
+												  ) ~ "E11000007",
+							     `ONS Geography` %in% c(
+										    "E08000001", 
+										    "E08000002", 
+										    "E08000003", 
+										    "E08000004", 
+										    "E08000005", 
+										    "E08000006", 
+										    "E08000007", 
+										    "E08000008", 
+										    "E08000009", 
+										    "E08000010"
+										    ) ~ "E11000001",
+							     `ONS Geography` %in% c(
+										    "E08000011",
+										    "E08000012",
+										    "E08000014",
+										    "E08000013",
+										    "E08000015"
+										    ) ~ "E11000002",
+							     `ONS Geography` %in% c(
+										    "E08000016",
+										    "E08000017",
+										    "E08000018",
+										    "E08000019"
+										    ) ~ "E11000003",
+							     `ONS Geography` %in% c(
+										    "E08000032",
+										    "E08000033",
+										    "E08000034",
+										    "E08000035",
+										    "E08000036"
+										    ) ~ "E11000006",
+							     `ONS Geography` %in% c(
+										    "E08000025",
+										    "E08000026",
+										    "E08000027",
+										    "E08000028",
+										    "E08000029",
+										    "E08000030",
+										    "E08000031"
+										    ) ~ "E11000005",
+							     `ONS Geography` %in% c(
+										    "E09000007",
+										    "E09000001",
+										    "E09000012",
+										    "E09000013",
+										    "E09000014",
+										    "E09000019",
+										    "E09000020",
+										    "E09000022",
+										    "E09000023",
+										    "E09000025",
+										    "E09000028",
+										    "E09000030",
+										    "E09000032",
+										    "E09000033"
+										    ) ~ "E13000001",
+							     `ONS Geography` %in% c(
+										    "E09000002",
+										    "E09000003",
+										    "E09000004",
+										    "E09000005",
+										    "E09000006",
+										    "E09000008",
+										    "E09000009",
+										    "E09000010",
+										    "E09000011",
+										    "E09000015",
+										    "E09000016",
+										    "E09000017",
+										    "E09000018",
+										    "E09000021",
+										    "E09000024",
+										    "E09000026",
+										    "E09000027",
+										    "E09000029",
+										    "E09000031"
+										    ) ~ "E13000002",
+							     #			     # fusion des authorités unitaires dont les résultats sont extrêmes avec l'autorité locale la plus importante et la proche
+							     #			     # !! il faudra corriger la pondération!
+							     #			     # South Gloucestershire et North Somerset avec Bristol, City of
+							     #			     `ONS Geography` %in% c(
+							     #"E06000025",
+							     #"E06000024"
+							     #								  ) ~ "E06000023",
+							     #			     # Stockton-on-Tees avec Middlesbrough, sous le nom de Stockton
+							     #			     `ONS Geography` %in% c(
+							     #"E06000002"
+							     #								  ) ~ "E06000004",
+							     #			     # Windsor and Maidenhead et Bracknell Forest avec outer london
+							     #			     `ONS Geography` %in% c(
+							     #						    "E06000036",
+							     #						    "E06000040"
+							     #								  ) ~ "E13000002",
+							     TRUE ~ `ONS Geography`
+					       )
+					)
 				df = aggregate(df$"Finished consultant episodes", by = df$"ONS Geography" |> list(), FUN = sum)
 				names(df) = c("ONS.Geography", "Finished consultant episodes") 
 				df
-			       })() 
+							})() 
 		       # fin de lapply()
 	}
-	) |>
+		) |>
 	    (\(ls_admi) {
 		     ls_admi[[1]] |>
 			     merge(ls_admi[[2]], by = "ONS.Geography", suffixes = c(".2017",".2018")) |>
 			     merge(ls_admi[[3]], by = "ONS.Geography", suffixes = c(".2018",".2019")) |>
 			     merge(ls_admi[[4]], by = "ONS.Geography", suffixes = c(".2019",".2020"))
-	})() |>
+		})() |>
 	    (\(df) {
 		     df[,"evo.FCE.2017-2019.2020"] = (df[, 5] - rowMeans(df[, 2:4])) / rowMeans(df[, 2:4])
 		     df
-	})() |>
-	     _[c("ONS.Geography","evo.FCE.2017-2019.2020")] |>
-	     (\(df) {
-#		      # df = df[grepl("E1000002", df$ONS.Geography), ]
-# df[df[2] >= -0.3 & df[2] <= -0.1, ]
-#		      df
-	})() |>
+		})() |>
+	    (\(df) {
+		     # df = df[grepl("E11", df$ONS.Geography), ]
+		     # df = df[df[,"evo.FCE.2017-2019.2020"] >= -0.4 & df[,"evo.FCE.2017-2019.2020"] <= 0.1, ]
+		     # df[order(df$"evo.FCE.2017-2019.2020"),]
+		     df
+		})() |>
+	    _[c("ONS.Geography","evo.FCE.2017-2019.2020")] |>
 	    print()
 })
+
 # E060000: ns 0
 # E0600000: s 0
 # E0600001: ns +
@@ -252,11 +360,11 @@ system.time({
 # E0900002: ns 0
 # E0900003: ns -
 # E100000: s -
-# E1000000: ns -
+# E1000000: s -
 # E1000001: ns -
 # E1000002: s -
 # E1000003: s 0
-# valeurs abhérentes! exemples: E06000040 6.24106464, E09000026 -0.89128306, E06000025 -0.99195423, etc. pourquoi nous n'avons pas les E07? (districts)
+# valeurs aberrantes! exemples: E06000040 6.24106464, E09000026 -0.89128306, E06000025 -0.99195423, etc. pourquoi nous n'avons pas les E07? (districts)
 # !!!remember: renommer la liste clean_hosp_codes_list en all_data_list
 years_tasks_list_morta = c(
 			   "2017_morta" = "2017_morta",
@@ -270,108 +378,45 @@ mortality = clean_hosp_codes_list[years_tasks_list_morta] |>
 		    .x["mortality"] = .x["Deaths of Persons all ages"] / .x["Populations Number (thousands) of Persons all ages"] 
 		    .x[c("Area codes","mortality")]
 }) |>
-	reduce(merge, by = "Area codes") |>
-	print()
-# la mortalité est correcte, correspond aux fichiers xsl
-names(mortality) = c("Area codes", "2017", "2018", "2019", "2020") 
-mortality |>
-	as_tibble() |>
-	print()
-evo_mortality = mortality |>
-	(\(df) {
-		 df[,"evo.morta.2017-2019.2020"] = (df[, "2020"] - rowMeans(df[, c("2017","2018","2019")])) / rowMeans(df[, c("2017","2018","2019")])
-		 df
+			   reduce(merge, by = "Area codes") |>
+			   print()
+		   # la mortalité est correcte, correspond aux fichiers xsl
+		   names(mortality) = c("Area codes", "2017", "2018", "2019", "2020") 
+		   mortality |>
+			   as_tibble() |>
+			   print()
+		   evo_mortality = mortality |>
+			   (\(df) {
+				    df[,"evo.morta.2017-2019.2020"] = (df[, "2020"] - rowMeans(df[, c("2017","2018","2019")])) / rowMeans(df[, c("2017","2018","2019")])
+				    df
 }
-)() |>
+		   )() |>
 			   _[c("Area codes","evo.morta.2017-2019.2020")] |>
 			   as_tibble() |>
 			   print()
-ponderation = clean_hosp_codes_list[["2020_morta"]] |>
-	_[c("Area codes","Populations Number (thousands) of Persons all ages")] |>
-	print()
-corelation = evo_mortality |>
-	merge(evo.FCE.2017_2019.2020, by = 1) |>
-	merge(ponderation, by = 1) |>
-	as_tibble() |>
-	print()
-wtd.cor(corelation[[2]], corelation[[3]], weight = corelation[[4]]) |>
-	print()
-
-?rename_at
-
-	evo.morta.2017_2019.2020 =
-	years_tasks_list_morta |>
-		lapply(function(task) {
-
-	}
-
-?merge
-
-evo.FCE.2017_2019.2020
-
-# solution parallèle
-# 120-130ms sans print()
-# moins rapide que la solution sérielle
-system.time({
-	years_tasks_list_admi = c(
-			     "2017_admi" = "2017_admi",
-			     "2018_admi" = "2018_admi",
-			     "2019_admi" = "2019_admi",
-			     "2020_admi" = "2020_admi"
-	) 
-	clusterExport(cl, c("clean_hosp_codes_list","years_tasks_list_admi"))
-	years_tasks_list_admi |>
-		parLapply(cl = NULL, function(task) {
-				  merge(clean_hosp_codes_list$"nhs_geo_code", clean_hosp_codes_list[[years_tasks_list_admi[task]]], by = "Code") |>
-					  (\(df) {
-						   df[order(df$"Geographic.Local.Authority.Code"),]
-							}
-				  )() |>
-			  # Fusion du résultat avec le fichier clean_nhs2ons_code. Permet d'associer le code géographique NHS au code géographique ONS.
-			  merge(clean_hosp_codes_list$"clean_nhs2ons_code", by = "Geographic.Local.Authority.Code") |>
-			  _[c("ONS Geography", "Finished consultant episodes")] |> 
-			  # grouper par code géographique ONS et sommer les éléments de chaque groupe.
-			  (\(df) {
-				   df = aggregate(df$"Finished consultant episodes", by = df$"ONS Geography" |> list(), FUN = sum)
-				   names(df) = c("ONS.Geography", "Finished consultant episodes") 
-				   df
-				  })() |>
-			  as_tibble()
-	}
-	) |>
-	    print()
-})
-
-
-?merge
-
-capabilities("fifo")
-
-help("tempfile")
-
-getOption("encoding")
-
-help("fifo")
-
-packageVersion("base")
-
-tempfile(fileext = ".fifo")
-
-setdiff(c(1,2,3),c(1,2))
-
-setdiff(clean_hosp_codes_vector, nhs_geo_code)
-
-zz <- tempfile() |>
-	fifo("w+")
-c("azerty") |>
-	writeLines(zz)
-readLines(zz) 
-close(zz)
-
-clean_hosp_codes_vector =
-	clean_hosp_codes_list |>
-	unlist() |>
-	sort() |>
-	unique() |>
-	unname() |>
-	print()
+		   ponderation = clean_hosp_codes_list[["2020_morta"]] |>
+			   _[c("Area codes","Populations Number (thousands) of Persons all ages")] |>
+			   print()
+		   corelation = evo_mortality |>
+			   merge(evo.FCE.2017_2019.2020, by = 1) |>
+			   merge(ponderation, by = 1) |>
+			   as_tibble() |>
+			   print()
+		   wtd.cor(corelation[[2]], corelation[[3]], weight = corelation[[4]]) |>
+			   print()
+		   # Créer le fichier PNG
+		   png("test.png", width = 1000, height = 1000)
+		   # Dessiner le nuage de points
+		   plot(
+			x = corelation[[3]],
+			y = corelation[[2]],
+			cex = corelation[[4]]/500000,
+			main = "Δ Mortalité vs Δ recours aux soins, 2020",
+			xlab = "Δ recours aux soins",
+			ylab = "Δ mortalité"
+		   )
+		   # Ajuster la régression linéaire et ajouter la ligne de tendance:
+		   lm(corelation[[2]] ~ corelation[[3]], weights = corelation[[4]]) |>
+			   abline(col = "red")
+		   # Fermer le fichier PNG
+		   dev.off()
